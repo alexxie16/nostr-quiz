@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nostr Kind 0 LUD16 Extractor</title>
+    <title>Nostr Lightning Address Finder</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         #output { border: 1px solid #ccc; padding: 10px; max-height: 400px; overflow-y: auto; }
@@ -62,7 +62,7 @@
                             // Stop: Send CLOSE
                             ws.send(JSON.stringify(['CLOSE', SUB_ID]));
                             updateStatus(`Stopped after ${MAX_ADDRESSES} addresses.`);
-                            ws.close(); // Optional: Close connection
+                            ws.close(); // Close connection
                         }
                     }
                 } catch (e) {
