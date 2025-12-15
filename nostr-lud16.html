@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nostr Kind 0 LUD16 Extractor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #output { border: 1px solid #ccc; padding: 10px; max-height: 400px; overflow-y: auto; }
+        #status { margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Nostr LUD16 Address Finder</h1>
+    <div id="status">Connecting to relay...</div>
+    <div id="output"></div>
+
+    <script>
+        const RELAY_URL = 'wss://relay.damus.io'; // Public Nostr relay
+        const SUB_ID = 'lud16-sub';
+        let count = 0;
+        const MAX_ADDRESSES = 21;
+
+        const statusEl = document.getElementById('status');
+        const outputEl = document.getElementById('output');
+
+        function appendToOutput(text) {
+            outputEl.innerHTML += `<p>${text}</p>`;
+            outputEl.scrollTop = outputEl.scrollHeight;
+            console.log(text); // Also log to console
+        }
+
+        function updateStatus(text) {
+            statusEl.textContent = text;
+            console.log(text);
+        }
+
+        // Connect to relay
+        const ws = new WebSocket(RELAY_URL);
+
+        ws.onopen = () => {
+            updateStatus('Connected. Subscribing to kind 0 events...');
+            // NIP-01 REQ: Subscribe to all kind 0 (profiles)
+            const subMsg = JSON.stringify(['REQ', SUB_ID, { kinds: [0] }]);
+            ws.send(subMsg);
+        };
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            const [type, id, content] = msg; // [ "EVENT", sub_id, event_obj ]
+
+            if (type === 'EVENT' && id === SUB_ID) {
+                try {
+                    const profile = JSON.parse(content.content); // Parse content JSON
+                    const lud16 = profile.lud16;
+                    if (lud16 && typeof lud16 === 'string' && lud16.includes('@')) {
+                        count++;
+                        appendToOutput(`Found: ${lud16}`);
+                        updateStatus(`Found ${count}/${MAX_ADDRESSES} addresses...`);
+
+                        if (count >= MAX_ADDRESSES) {
+                            // Stop: Send CLOSE
+                            ws.send(JSON.stringify(['CLOSE', SUB_ID]));
+                            updateStatus(`Stopped after ${MAX_ADDRESSES} addresses.`);
+                            ws.close(); // Optional: Close connection
+                        }
+                    }
+                } catch (e) {
+                    // Skip invalid JSON or missing lud16
+                    console.warn('Invalid profile event:', e);
+                }
+            }
+        };
+
+        ws.onerror = (err) => {
+            updateStatus('Error: Connection failed. Try a different relay.');
+            console.error('WebSocket error:', err);
+        };
+
+        ws.onclose = () => {
+            updateStatus('Connection closed.');
+        };
+    </script>
+</body>
+</html>
