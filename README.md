@@ -10,7 +10,7 @@ A simple web client that connects to a public Nostr relay, subscribes to kind 0 
 - Automatically stops after collecting 21 addresses
 
 ### Live Demo
-TBD
+[Open the deployed web client](https://alexxie16.github.io/nostr-quiz/)  
 
 ### How to Run Locally
 1. Clone the repo
